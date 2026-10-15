@@ -1,0 +1,67 @@
+### Sample requests for the EWB Students CRUD API
+### Use with the VS Code "REST Client" extension or JetBrains HTTP client.
+### Server assumed at http://localhost:8000
+
+@base = http://localhost:8000
+
+### Health check
+GET {{base}}/health
+
+### Create a student
+POST {{base}}/students
+Content-Type: application/json
+
+{
+  "name": "Asha Verma",
+  "date_of_birth": "2004-06-15",
+  "email": "asha.verma@example.com",
+  "phone": "+91 98765 43210",
+  "course": "Computer Science",
+  "address": "Pune",
+  "enrollment_date": "2022-08-01"
+}
+
+### List all students
+GET {{base}}/students
+
+### Filter: name contains "asha"
+GET {{base}}/students?search=asha
+
+### Filter: born after 2005-01-01
+GET {{base}}/students?born_after=2005-01-01
+
+### Filter: course + pagination
+GET {{base}}/students?course=Computer%20Science&limit=10&offset=0
+
+### View one student
+GET {{base}}/students/1
+
+### Update a student (partial / PATCH)
+PATCH {{base}}/students/1
+Content-Type: application/json
+
+{
+  "course": "Data Science"
+}
+
+### Replace-style update (PUT)
+PUT {{base}}/students/1
+Content-Type: application/json
+
+{
+  "name": "Asha Verma",
+  "date_of_birth": "2004-06-15",
+  "email": "asha.verma@example.com",
+  "course": "AI & ML"
+}
+
+### Delete a student
+DELETE {{base}}/students/1
+
+### Optional AI question (requires Ollama running)
+POST {{base}}/ai/ask
+Content-Type: application/json
+
+{
+  "question": "How many students are there and how many were born after 2005?"
+}

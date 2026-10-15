@@ -1,0 +1,10 @@
+# Core API
+fastapi>=0.110
+uvicorn[standard]>=0.29
+pydantic[email]>=2.6     # [email] pulls in email-validator for EmailStr
+
+# Used by the optional AI endpoint AND by the test client
+httpx>=0.27
+
+# Tests (dev)
+pytest>=8.0

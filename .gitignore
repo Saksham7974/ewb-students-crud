@@ -1,0 +1,24 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+env/
+
+# SQLite database (never commit real data)
+*.db
+*.sqlite3
+
+# Testing / tooling
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Secrets / env
+.env
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
