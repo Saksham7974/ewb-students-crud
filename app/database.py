@@ -43,7 +43,7 @@ def get_connection() -> Iterator[sqlite3.Connection]:
 
 
 def init_db() -> None:
-    """Create the ``students`` table if it does not exist yet."""
+    """Create the ``students`` table and unique index if they do not exist yet."""
     with get_connection() as conn:
         conn.execute(
             """
@@ -60,3 +60,16 @@ def init_db() -> None:
             )
             """
         )
+        # Create unique index on non-null lowercased email, handling legacy duplicates safely
+        try:
+            conn.execute(
+                """
+                CREATE UNIQUE INDEX IF NOT EXISTS idx_students_email_unique
+                ON students(lower(email))
+                WHERE email IS NOT NULL AND email != ''
+                """
+            )
+        except sqlite3.OperationalError:
+            # If pre-existing duplicate records already exist in an old DB, do not abort;
+            # application-level checks in crud.py / main.py still protect new writes.
+            pass

@@ -63,7 +63,17 @@ def health() -> dict:
     summary="Create a student",
 )
 def create_student(payload: StudentCreate) -> dict:
-    return crud.create_student(payload)
+    if payload.email:
+        duplicate = crud.get_student_by_email(payload.email)
+        if duplicate:
+            raise HTTPException(
+                status.HTTP_409_CONFLICT,
+                detail=f"A student with email '{payload.email}' already exists.",
+            )
+    try:
+        return crud.create_student(payload)
+    except ValueError as exc:
+        raise HTTPException(status.HTTP_409_CONFLICT, detail=str(exc))
 
 
 @app.get(
@@ -103,20 +113,25 @@ def get_student(student_id: int) -> dict:
     return student
 
 
-@app.api_route(
-    "/students/{student_id}",
-    methods=["PUT", "PATCH"],
-    response_model=Student,
-    tags=["students"],
-    summary="Update a student (partial update supported)",
-)
-def update_student(student_id: int, payload: StudentUpdate) -> dict:
+def _handle_update_student(student_id: int, payload: StudentUpdate) -> dict:
     existing = crud.get_student(student_id)
     if existing is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Student not found")
 
-    # Enforce the "at least one contact" rule against the merged result.
     changes = payload.model_dump(exclude_unset=True)
+
+    # Check email uniqueness if email is being updated to a non-null address
+    if "email" in changes and changes["email"]:
+        duplicate = crud.get_student_by_email(
+            changes["email"], exclude_id=student_id
+        )
+        if duplicate:
+            raise HTTPException(
+                status.HTTP_409_CONFLICT,
+                detail=f"A student with email '{changes['email']}' already exists.",
+            )
+
+    # Enforce the "at least one contact" rule against the merged result.
     final_email = changes["email"] if "email" in changes else existing["email"]
     final_phone = changes["phone"] if "phone" in changes else existing["phone"]
     if not final_email and not final_phone:
@@ -125,7 +140,32 @@ def update_student(student_id: int, payload: StudentUpdate) -> dict:
             detail="Student must keep at least one contact (email or phone)",
         )
 
-    return crud.update_student(student_id, payload)
+    try:
+        return crud.update_student(student_id, payload)
+    except ValueError as exc:
+        raise HTTPException(status.HTTP_409_CONFLICT, detail=str(exc))
+
+
+@app.put(
+    "/students/{student_id}",
+    response_model=Student,
+    tags=["students"],
+    summary="Update a student (PUT)",
+    operation_id="update_student_put",
+)
+def update_student_put(student_id: int, payload: StudentUpdate) -> dict:
+    return _handle_update_student(student_id, payload)
+
+
+@app.patch(
+    "/students/{student_id}",
+    response_model=Student,
+    tags=["students"],
+    summary="Update a student (PATCH - partial update)",
+    operation_id="update_student_patch",
+)
+def update_student_patch(student_id: int, payload: StudentUpdate) -> dict:
+    return _handle_update_student(student_id, payload)
 
 
 @app.delete(

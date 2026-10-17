@@ -7,6 +7,7 @@ placeholders), so values are never concatenated into SQL.
 from __future__ import annotations
 
 from datetime import date
+import sqlite3
 from typing import Any, Optional
 
 from . import database
@@ -33,22 +34,25 @@ def _to_db(value: Any) -> Any:
 
 def create_student(data: StudentCreate) -> dict:
     with database.get_connection() as conn:
-        cur = conn.execute(
-            """
-            INSERT INTO students
-                (name, date_of_birth, email, phone, course, address, enrollment_date)
-            VALUES (?, ?, ?, ?, ?, ?, ?)
-            """,
-            (
-                data.name,
-                data.date_of_birth.isoformat(),
-                data.email,
-                data.phone,
-                data.course,
-                data.address,
-                _to_db(data.enrollment_date),
-            ),
-        )
+        try:
+            cur = conn.execute(
+                """
+                INSERT INTO students
+                    (name, date_of_birth, email, phone, course, address, enrollment_date)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    data.name,
+                    data.date_of_birth.isoformat(),
+                    data.email,
+                    data.phone,
+                    data.course,
+                    data.address,
+                    _to_db(data.enrollment_date),
+                ),
+            )
+        except sqlite3.IntegrityError:
+            raise ValueError(f"A student with email '{data.email}' already exists.")
         # Read back on the SAME connection so we see the uncommitted row.
         row = conn.execute(
             "SELECT * FROM students WHERE id = ?", (cur.lastrowid,)
@@ -129,9 +133,14 @@ def update_student(student_id: int, data: StudentUpdate) -> Optional[dict]:
     with database.get_connection() as conn:
         if sets:
             params.append(student_id)
-            conn.execute(
-                f"UPDATE students SET {', '.join(sets)} WHERE id = ?", params
-            )
+            try:
+                conn.execute(
+                    f"UPDATE students SET {', '.join(sets)} WHERE id = ?", params
+                )
+            except sqlite3.IntegrityError:
+                raise ValueError(
+                    f"A student with email '{fields.get('email')}' already exists."
+                )
         row = conn.execute(
             "SELECT * FROM students WHERE id = ?", (student_id,)
         ).fetchone()

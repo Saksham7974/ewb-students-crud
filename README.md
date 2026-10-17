@@ -76,7 +76,8 @@ python seed.py --reset  # wipes and re-inserts
 | `POST`       | `/students`              | Create a student        |
 | `GET`        | `/students`              | List / filter students  |
 | `GET`        | `/students/{student_id}` | View a single student   |
-| `PUT`/`PATCH`| `/students/{student_id}` | Update a student        |
+| `PUT`        | `/students/{student_id}` | Update a student (PUT)  |
+| `PATCH`      | `/students/{student_id}` | Update a student (PATCH)|
 | `DELETE`     | `/students/{student_id}` | Delete a student        |
 | `POST`       | `/ai/ask`                | *(optional)* Ask the AI |
 
@@ -87,7 +88,7 @@ python seed.py --reset  # wipes and re-inserts
 | `id`              | int    | auto     | Unique primary key                      |
 | `name`            | string | ✅       | Non-empty                               |
 | `date_of_birth`   | date   | ✅       | `YYYY-MM-DD`, must be in the past       |
-| `email`           | string | ⚠️       | Valid email; **email or phone** required |
+| `email`           | string | ⚠️       | Unique email; **email or phone** required|
 | `phone`           | string | ⚠️       | **email or phone** required             |
 | `course`          | string | –        | Optional                                |
 | `address`         | string | –        | Optional                                |
@@ -209,8 +210,8 @@ ewb-students-crud/
 
 ## 8. Notes
 
-- Validation and 404 handling are built in: invalid payloads return `422`,
-  unknown IDs return `404`.
+- Validation, conflict, and 404 handling are built in: invalid payloads return `422`,
+  duplicate emails return `409`, and unknown IDs return `404`.
 - SQL injection is avoided throughout — **every** query is parameterised.
 - Do not commit `students.db`, secrets, or real personal data (`.gitignore`
   already excludes the database and `.env`).
