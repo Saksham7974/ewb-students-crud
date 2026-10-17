@@ -185,7 +185,46 @@ Configuration (optional, via environment variables):
 
 ---
 
-## 7. Project structure
+## 7. Deployment to Render
+
+This application is ready to deploy directly from GitHub to [Render](https://render.com).
+
+### Option 1: Automatic Blueprint (Recommended)
+Because the repository includes [`render.yaml`](render.yaml), Render can automatically configure the web service:
+1. Log in to [Render Dashboard](https://dashboard.render.com).
+2. Click **New +** > **Blueprint**.
+3. Connect your GitHub repository: `https://github.com/Saksham7974/ewb-students-crud`.
+4. Click **Apply**.
+
+### Option 2: Manual Web Service Setup
+If creating a Web Service manually:
+1. Click **New +** > **Web Service**.
+2. Select your repository `ewb-students-crud`.
+3. Set the following settings:
+   - **Name:** `ewb-students-crud` (or your preferred name)
+   - **Language:** `Python`
+   - **Branch:** `main`
+   - **Region:** Any (e.g., `Singapore` or `Frankfurt`)
+   - **Build Command:** `pip install -r requirements.txt`
+   - **Start Command:** `uvicorn app.main:app --host 0.0.0.0 --port $PORT`
+   - **Instance Type:** `Free`
+4. Expand **Advanced** and set:
+   - **Health Check Path:** `/health`
+   - **Environment Variables:** Add `PYTHON_VERSION` = `3.11.9`
+5. Click **Create Web Service**.
+
+### SQLite Persistence on Cloud Platforms
+- **Render Free Tier:** Web services on Render Free run on an ephemeral disk. The SQLite database is created automatically upon startup and persists while the container is active. However, when the instance spins down due to inactivity or restarts/redeploys, the local SQLite database resets.
+- **Persistent Storage (Optional Paid Plan):** On Render Starter plans ($7/mo), you can attach a persistent disk (e.g. mounted at `/var/data`) and set the environment variable:
+  ```
+  STUDENTS_DB=/var/data/students.db
+  ```
+  The application automatically creates any missing parent directories and uses the persistent disk path, without modifying local development defaults.
+- **Privacy & Security:** Local `students.db` files and environment secrets are excluded by `.gitignore` and are never committed to GitHub or uploaded to cloud services.
+
+---
+
+## 8. Project structure
 
 ```
 ewb-students-crud/
@@ -202,13 +241,14 @@ ewb-students-crud/
 ├── seed.py            # Dummy data loader
 ├── requirements.txt
 ├── requests.http      # Ready-to-run sample requests
+├── render.yaml        # Render deployment blueprint
 ├── .gitignore
 └── README.md
 ```
 
 ---
 
-## 8. Notes
+## 9. Notes
 
 - Validation, conflict, and 404 handling are built in: invalid payloads return `422`,
   duplicate emails return `409`, and unknown IDs return `404`.

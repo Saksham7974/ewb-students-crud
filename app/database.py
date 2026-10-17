@@ -19,7 +19,9 @@ DEFAULT_DB_PATH = Path(__file__).resolve().parent.parent / "students.db"
 
 
 def _db_path() -> str:
-    return os.environ.get("STUDENTS_DB", str(DEFAULT_DB_PATH))
+    path = Path(os.environ.get("STUDENTS_DB", str(DEFAULT_DB_PATH)))
+    path.parent.mkdir(parents=True, exist_ok=True)
+    return str(path)
 
 
 @contextmanager
